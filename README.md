@@ -1,6 +1,7 @@
 # kernel_libghthash
 Windows Kernel adaptation of libghthash, kudos to Simon Kagstrom for making this awesome library.
-All I did was port this library for usage in the Windows Kernel.
+Kudos to dannylion for porting this library for usage in the Windows Kernel.
+I updated this project for Visual Studio 2015 and Windows 10 WDK.
 
 See the original library at: https://github.com/SimonKagstrom/libghthash
 
