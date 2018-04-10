@@ -4,7 +4,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <IncludePath>$(KM_IncludePath);$(CRT_IncludePath);$(KIT_SHARED_IncludePath);$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)lib\$(ConfigurationName)\$(Platform)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(ConfigurationName)\$(Platform)\</OutDir>
     <LinkIncremental>false</LinkIncremental>
     <IntDir>IntBin\$(ConfigurationName)\$(PlatformTarget)\</IntDir>
     <EnableInf2cat>false</EnableInf2cat>
@@ -14,14 +14,21 @@
     <ClCompile>
       <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
-    <Lib>
-      <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
-    </Lib>
+    <Link>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
+    <Link>
+      <AdditionalOptions>/INTEGRITYCHECK %(AdditionalOptions)</AdditionalOptions>
+    </Link>
     <ClCompile>
       <AdditionalOptions>/kernel %(AdditionalOptions)</AdditionalOptions>
       <WarningLevel>Level4</WarningLevel>
+      <AdditionalIncludeDirectories>$(SolutionDir)kernel_libghthash;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Inf>
+      <CatalogFileName>$(TargetName).cat</CatalogFileName>
+    </Inf>
   </ItemDefinitionGroup>
 </Project>
