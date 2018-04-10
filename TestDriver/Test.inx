@@ -4,6 +4,8 @@
 
 [Version]
 Signature   = "$Windows NT$"
+Class       = TestClass
+ClassGuid   = {F4178B8C-0414-4FD9-88AB-866F90D48620}
 Provider    = %CompanyName%
  
 [DestinationDirs]
@@ -25,7 +27,7 @@ AddService = %DriverName%,%SPSVCINST_ASSOCSERVICE%,Driver.Service
 ;;
 
 [DefaultUninstall]
-DelFiles = Driver.DriverFiles
+DelFiles = Driver.DelDriverFiles
 
 [DefaultUninstall.Services]
 DelService = %DriverName%,%SPSVCINST_STOPSERVICE%      ;Ensure service is stopped before deleting
@@ -47,6 +49,9 @@ ErrorControl  = %SERVICE_ERROR_NORMAL%
 [Driver.DriverFiles]
 %DriverName%.sys
 
+[Driver.DelDriverFiles]
+%DriverName%.sys
+
 [SourceDisksFiles]
 %DriverName%.sys = 1,,
 
@@ -58,7 +63,7 @@ ErrorControl  = %SERVICE_ERROR_NORMAL%
 ;;
 
 [Strings]
-CompanyName            = ""
+CompanyName            = "Test"
 DriverName             = "Test"
 SPSVCINST_ASSOCSERVICE = 0x00000002
 SPSVCINST_STOPSERVICE  = 0x00000200

@@ -1,12 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kernel_libghthash", "kernel_libghthash\kernel_libghthash.vcxproj", "{710FFA32-0593-4E6C-BD32-E6C7DFF3CFDD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "TestDriver\Test.vcxproj", "{01D7C801-6914-47EA-A5A0-D0B521CAB1E5}"
-	ProjectSection(ProjectDependencies) = postProject
-		{710FFA32-0593-4E6C-BD32-E6C7DFF3CFDD} = {710FFA32-0593-4E6C-BD32-E6C7DFF3CFDD}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

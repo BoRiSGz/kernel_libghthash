@@ -20,55 +20,25 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{01D7C801-6914-47EA-A5A0-D0B521CAB1E5}</ProjectGuid>
-    <TemplateGuid>{dd38f7fc-d7bd-488b-9242-7d8754cde80d}</TemplateGuid>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <MinimumVisualStudioVersion>11.0</MinimumVisualStudioVersion>
-    <Configuration>Win8 Debug</Configuration>
-    <Platform Condition="'$(Platform)' == ''">Win32</Platform>
+    <RootNamespace>$(MSBuildProjectName)</RootNamespace>
   </PropertyGroup>
-  <PropertyGroup Label="Globals">
-    <RootNamespace>Test</RootNamespace>
-    <VCTargetsPath Condition="'$(VCTargetsPath11)' != '' and '$(VisualStudioVersion)' == '11.0'">$(VCTargetsPath11)</VCTargetsPath>
-  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="PropertySheets">
-    <PlatformToolset>WindowsKernelModeDriver8.0</PlatformToolset>
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>WDM</DriverType>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetVersion>Win7</TargetVersion>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)'=='Debug'">
     <UseDebugLibraries>True</UseDebugLibraries>
   </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <TargetVersion>Win7</TargetVersion>
-    <UseDebugLibraries>False</UseDebugLibraries>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <TargetVersion>Win7</TargetVersion>
-    <UseDebugLibraries>True</UseDebugLibraries>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <TargetVersion>Win7</TargetVersion>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)'=='Release'">
     <UseDebugLibraries>False</UseDebugLibraries>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Test.props" />
   </ImportGroup>
-  <PropertyGroup>
-    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <OutDir>$(SolutionDir)bin\$(ConfigurationName)\$(Platform)\</OutDir>
-    <IncludePath>$(SolutionDir)kernel_libghthash;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)lib\$(ConfigurationName)\$(Platform);$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <ItemDefinitionGroup>
-    <Link>
-      <AdditionalDependencies>kernel_libghthash.lib;wdmsec.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemGroup>
     <Inf Include="Test.inx" />
   </ItemGroup>
@@ -84,7 +54,10 @@
     <ClInclude Include="Common.h" />
     <ClInclude Include="Test.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\kernel_libghthash\kernel_libghthash.vcxproj">
+      <Project>{710ffa32-0593-4e6c-bd32-e6c7dff3cfdd}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
 </Project>
