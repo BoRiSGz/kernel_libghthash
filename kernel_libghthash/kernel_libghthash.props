@@ -4,7 +4,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <IncludePath>$(KM_IncludePath);$(CRT_IncludePath);$(KIT_SHARED_IncludePath);$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)lib\$(ConfigurationName)\$(Platform)\</OutDir>
+    <OutDir>$(SolutionDir)lib\$(ConfigurationName)\$(PlatformTarget)\</OutDir>
     <LinkIncremental>false</LinkIncremental>
     <IntDir>IntBin\$(ConfigurationName)\$(PlatformTarget)\</IntDir>
     <EnableInf2cat>false</EnableInf2cat>
