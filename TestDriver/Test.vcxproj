@@ -44,10 +44,10 @@
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>WDM</DriverType>
   </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)'=='Debug'">
+  <PropertyGroup Label="Configuration" Condition="('$(Configuration)'=='Win10 Debug') Or ('$(Configuration)'=='Win7 Debug')">
     <UseDebugLibraries>True</UseDebugLibraries>
   </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)'=='Release'">
+  <PropertyGroup Label="Configuration" Condition="('$(Configuration)'=='Win10 Release') Or ('$(Configuration)'=='Win7 Release')">
     <UseDebugLibraries>False</UseDebugLibraries>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
