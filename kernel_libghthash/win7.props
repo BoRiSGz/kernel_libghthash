@@ -10,9 +10,6 @@
     <ClCompile>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0601;WINVER=0x0601;WINNT=1;NTDDI_VERSION=0x06010000</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>BufferOverflowK.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(PlatformTarget)'=='x86'">
     <ClCompile>
