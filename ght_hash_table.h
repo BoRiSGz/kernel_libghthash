@@ -1,6 +1,6 @@
 /*-*-c-*- ************************************************************
  * Copyright (C) 2001-2005,  Simon Kagstrom
- * Edited by Dan Li-on 10/01/2016
+ * Edited by Boris Erbesfeld 22/10/2018
  *
  * Filename:      ght_hash_table.h.in
  * Description:   The definitions used in the hash table.
@@ -53,19 +53,15 @@
  *   key size directly.
  *
  * - The hash table copies the key data when inserting new
- *   entries. This means that you should <I>not</I> DefaultAllocFunction() the key
+ *   entries. This means that you should <I>not</I> malloc() the key
  *   before inserting a new entry.
  *
  */
 #ifndef GHT_HASH_TABLE_H
 #define GHT_HASH_TABLE_H
 
-#if defined(_WIN32) && defined(_KERNEL_MODE)
-#include <ntddk.h>
-#else
 #include <stdint.h>
-#include <stdlib.h>  /* size_t */
-#endif
+#include <stdlib.h>                    /* size_t */
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,12 +81,7 @@ extern "C" {
 #endif
 
 /** unsigned 32 bit integer. */
-#if defined(_WIN32) && defined(_KERNEL_MODE)
-typedef UINT32 ght_uint32_t;
-#else
 typedef uint32_t ght_uint32_t;
-#endif
-
 
 /**
  * The structure for hash keys. You should not care about this
@@ -147,7 +138,7 @@ typedef ght_uint32_t (*ght_fn_hash_t)(ght_hash_key_t *p_key);
 
 /**
  * Definition of the allocation function pointers. This is simply the
- * same definition as @c DefaultAllocFunction().
+ * same definition as @c malloc().
  *
  * @param size the size to allocate. This will always be
  *        <TT>sizeof(ght_hash_entry_t) + key_size</TT>.
@@ -159,14 +150,14 @@ typedef void *(*ght_fn_alloc_t)(size_t size);
 
 /**
  * Definition of the deallocation function pointers. This is simply the
- * same definition as @c DefaultFreeFunction().
+ * same definition as @c free().
  *
- * @param ptr a pointer to the region to DefaultFreeFunction.
+ * @param ptr a pointer to the region to free.
  */
 typedef void (*ght_fn_free_t)(void *ptr);
 
 /**
- * Definition of bounded bucket DefaultFreeFunction callback function pointers.
+ * Definition of bounded bucket free callback function pointers.
  *
  * The keys is passed back as const, since it was accepted by ght_insert()
  * as const, but if the callback function knows that a non-const pointer
@@ -205,7 +196,7 @@ typedef struct
  * higher power of two.
  *
  * The hash table is created with @c ght_one_at_a_time_hash() as hash
- * function, automatic rehashing disabled, @c DefaultAllocFunction() as the memory
+ * function, automatic rehashing disabled, @c malloc() as the memory
  * allocator and no heuristics.
  *
  * @param i_size the number of buckets in the hash table. Giving a
@@ -217,7 +208,9 @@ typedef struct
  *
  * @return a pointer to the hash table or NULL upon error.
  */
-ght_hash_table_t *ght_create(unsigned int i_size);
+ght_hash_table_t *ght_create(unsigned int i_size,
+    ght_fn_alloc_t fn_alloc,
+    ght_fn_free_t fn_free);
 
 /**
  * Set the allocation/freeing functions to use for a hash table. The
@@ -228,11 +221,11 @@ ght_hash_table_t *ght_create(unsigned int i_size);
  * sizeof(ght_hash_key_t) + key_size</TT>. The actual size varies with
  * the key size.
  *
- * If this function is <I>not</I> called, @c DefaultAllocFunction() and @c DefaultFreeFunction()
+ * If this function is <I>not</I> called, @c malloc() and @c free()
  * will be used for allocation and freeing.
  *
  * @warning Always call this function <I>before</I> any entries are
- *          inserted into the table. Otherwise, the new DefaultFreeFunction() might be called
+ *          inserted into the table. Otherwise, the new free() might be called
  *          on something that were allocated with another allocation function.
  *
  * @param p_ht the hash table to set the memory management functions
@@ -294,7 +287,7 @@ void ght_set_rehash(ght_hash_table_t *p_ht, int b_rehash);
  * holding a fixed number of elements per bucket. @a limit specifies
  * the limit of elements per bucket. When inserting elements with @a
  * ght_insert into a bounded table, the last entry in the bucket chain
- * will be DefaultFreeFunction:d. libghthash will then call the callback function @a
+ * will be free:d. libghthash will then call the callback function @a
  * fn, which allow the user of the library to dispose of the key and data.
  *
  * Bounded buckets are disabled by default.
@@ -303,7 +296,7 @@ void ght_set_rehash(ght_hash_table_t *p_ht, int b_rehash);
  * @param limit the maximum number of items in each bucket. If @a
  * limit is set to 0, bounded buckets are disabled.
  * @param fn a pointer to a callback function that is called when an
- * entry is DefaultFreeFunction:d. The function should return 0 if the entry can be
+ * entry is free:d. The function should return 0 if the entry can be
  * freed, or -1 otherwise. If -1 is returned, libghthash will select
  * the second last entry and call the callback with that instead.
  */
@@ -346,7 +339,7 @@ unsigned int ght_table_size(ght_hash_table_t *p_ht);
  * int ret;
  *
  * [Create p_table etc...]
- * p_data = DefaultAllocFunction(sizeof(int));
+ * p_data = malloc(sizeof(int));
  * p_key_data = "blabla";
  * *p_data = 15;
  *
@@ -545,7 +538,7 @@ void ght_rehash(ght_hash_table_t *p_ht, unsigned int i_size);
 /**
  * Free the hash table. ght_finalize() should typically be called
  * at the end of the program. Note that only the metadata and the keys
- * of the table is freed, not the entries. If you want to DefaultFreeFunction the
+ * of the table is freed, not the entries. If you want to free the
  * entries when removing the table, the entries will have to be
  * manually freed before ght_finalize() is called like:
  *
@@ -556,7 +549,7 @@ void ght_rehash(ght_hash_table_t *p_ht, unsigned int i_size);
  *
  * for(p_e = ght_first(p_table, &iterator, &p_key); p_e; p_e = ght_next(p_table, &iterator, &p_key))
  *   {
- *     DefaultFreeFunction(p_e);
+ *     free(p_e);
  *   }
  *
  * ght_finalize(p_table);

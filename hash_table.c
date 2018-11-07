@@ -1,7 +1,7 @@
 /*********************************************************************
  *
  * Copyright (C) 2001-2005,  Simon Kagstrom
- * Edited by Dan Li-on 10/01/2016
+ * Edited by Boris Erbesfeld 22/10/2018
  *
  * Filename:      hash_table.c
  * Description:   The implementation of the hash table (MK2).
@@ -25,19 +25,10 @@
  *
  ********************************************************************/
 
-#if defined(_WIN32) && defined(_KERNEL_MODE)
-#include <ntddk.h>
-#endif
 
 #include <string.h> /* memcmp */
 
 #include "ght_hash_table.h"
-#include "DebugMacros.h"
-#include "memory_functions.h"
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 /* Prototypes */
 static void              transpose(ght_hash_table_t *p_ht, ght_uint32_t l_bucket, ght_hash_entry_t *p_entry);
@@ -202,8 +193,6 @@ static void free_entry_chain(ght_hash_table_t *p_ht, ght_hash_entry_t *p_entry)
 /* Fill in the data to a existing hash key */
 static void hk_fill(ght_hash_key_t *p_hk, int i_size, const void *p_key)
 {
-  DEBUG_ASSERT(p_hk);
-
   p_hk->i_size = i_size;
   p_hk->p_key = p_key;
 }
@@ -225,13 +214,12 @@ static ght_hash_entry_t *he_create(ght_hash_table_t *p_ht, void *p_data,
    * That is, the key and the key data is stored "inline" within the
    * hash entry.
    *
-   * This saves space since DefaultAllocFunction only is called once and thus avoids
+   * This saves space since fn_alloc only is called once and thus avoids
    * some fragmentation. Thanks to Dru Lemley for this idea.
    */
   p_he = (ght_hash_entry_t*)p_ht->fn_alloc (sizeof(ght_hash_entry_t)+i_key_size);
   if ( !(p_he) )
     {
-      LOG_ERROR("fn_alloc failed!\n");
       return NULL;
     }
 
@@ -249,11 +237,9 @@ static ght_hash_entry_t *he_create(ght_hash_table_t *p_ht, void *p_data,
   return p_he;
 }
 
-/* Finalize (DefaultFreeFunction) a hash entry */
+/* Finalize (fn_free) a hash entry */
 static void he_finalize(ght_hash_table_t *p_ht, ght_hash_entry_t *p_he)
 {
-  DEBUG_ASSERT(p_he);
-
 #if !defined(NDEBUG)
   p_he->p_next = NULL;
   p_he->p_prev = NULL;
@@ -296,15 +282,22 @@ static ght_uint32_t get_hash_value(ght_hash_table_t *p_ht, ght_hash_key_t *p_key
 
 /* --- Exported methods --- */
 /* Create a new hash table */
-ght_hash_table_t *ght_create(unsigned int i_size)
+ght_hash_table_t *ght_create(unsigned int i_size,
+    ght_fn_alloc_t fn_alloc,
+    ght_fn_free_t fn_free)
 {
   ght_hash_table_t *p_ht;
   int i=1;
 
-  p_ht = (ght_hash_table_t*)DefaultAllocFunction(sizeof(ght_hash_table_t));
+	if (	(0 == i_size)
+		||	(NULL == fn_alloc)
+		||	(NULL == fn_free))
+	{
+		return NULL;
+	}
+  p_ht = (ght_hash_table_t*)fn_alloc(sizeof(ght_hash_table_t));
   if (!(p_ht))
     {
-      LOG_ERROR("DefaultAllocFunction");
       return NULL;
     }
 
@@ -321,8 +314,8 @@ ght_hash_table_t *ght_create(unsigned int i_size)
   p_ht->fn_hash = ght_one_at_a_time_hash;
 
   /* Standard values for allocations */
-  p_ht->fn_alloc = DefaultAllocFunction;
-  p_ht->fn_free = DefaultFreeFunction;
+  p_ht->fn_alloc = fn_alloc;
+  p_ht->fn_free = fn_free;
 
   /* Set flags */
   p_ht->i_heuristics = GHT_HEURISTICS_NONE;
@@ -332,22 +325,20 @@ ght_hash_table_t *ght_create(unsigned int i_size)
   p_ht->fn_bucket_free = NULL;
 
   /* Create an empty bucket list. */
-  p_ht->pp_entries = (ght_hash_entry_t**)DefaultAllocFunction(p_ht->i_size*sizeof(ght_hash_entry_t*));
+  p_ht->pp_entries = (ght_hash_entry_t**)fn_alloc(p_ht->i_size*sizeof(ght_hash_entry_t*));
   if ( !(p_ht->pp_entries) )
     {
-      LOG_ERROR("DefaultAllocFunction");
-      DefaultFreeFunction(p_ht);
+      fn_free(p_ht);
       return NULL;
     }
   memset(p_ht->pp_entries, 0, p_ht->i_size*sizeof(ght_hash_entry_t*));
 
   /* Initialise the number of entries in each bucket to zero */
-  p_ht->p_nr = (unsigned int*)DefaultAllocFunction(p_ht->i_size*sizeof(int));
+  p_ht->p_nr = (unsigned int*)fn_alloc(p_ht->i_size*sizeof(int));
   if ( !(p_ht->p_nr))
     {
-      LOG_ERROR("DefaultAllocFunction");
-      DefaultFreeFunction(p_ht->pp_entries);
-      DefaultFreeFunction(p_ht);
+      fn_free(p_ht->pp_entries);
+      fn_free(p_ht);
       return NULL;
     }
   memset(p_ht->p_nr, 0, p_ht->i_size*sizeof(int));
@@ -390,7 +381,6 @@ void ght_set_bounded_buckets(ght_hash_table_t *p_ht, unsigned int limit, ght_fn_
 
   if (limit > 0 && fn == NULL)
     {
-      LOG_ERROR("ght_set_bounded_buckets: The bucket callback function is NULL but the limit is not 0\n");
     }
 }
 
@@ -415,8 +405,6 @@ int ght_insert(ght_hash_table_t *p_ht,
   ght_hash_entry_t *p_entry;
   ght_uint32_t l_key;
   ght_hash_key_t key;
-
-  DEBUG_ASSERT(p_ht);
 
   hk_fill(&key, i_key_size, p_key_data);
   l_key = get_hash_value(p_ht, &key) & p_ht->i_size_mask;
@@ -462,8 +450,6 @@ int ght_insert(ght_hash_table_t *p_ht,
 	   p->p_next != NULL;
 	   p = p->p_next);
 
-      DEBUG_ASSERT(p && p->p_next == NULL);
-
       remove_from_chain(p_ht, l_key, p); /* To allow it to be reinserted in fn_bucket_free */
       p_ht->fn_bucket_free(p->p_data, p->key.p_key);
 
@@ -472,8 +458,6 @@ int ght_insert(ght_hash_table_t *p_ht,
   else
     {
       p_ht->p_nr[l_key]++;
-
-      DEBUG_ASSERT( p_ht->pp_entries[l_key]?p_ht->pp_entries[l_key]->p_prev == NULL:1 );
 
       p_ht->i_items++;
     }
@@ -502,14 +486,11 @@ void *ght_get(ght_hash_table_t *p_ht,
   ght_hash_key_t key;
   ght_uint32_t l_key;
 
-  DEBUG_ASSERT(p_ht);
-
   hk_fill(&key, i_key_size, p_key_data);
 
   l_key = get_hash_value(p_ht, &key) & p_ht->i_size_mask;
 
   /* Check that the first element in the list really is the first. */
-  DEBUG_ASSERT( p_ht->pp_entries[l_key]?p_ht->pp_entries[l_key]->p_prev == NULL:1 );
 
   /* LOCK: p_ht->pp_entries[l_key] */
   p_e = search_in_bucket(p_ht, l_key, &key, (unsigned char)p_ht->i_heuristics);
@@ -528,14 +509,11 @@ void *ght_replace(ght_hash_table_t *p_ht,
   ght_uint32_t l_key;
   void *p_old;
 
-  DEBUG_ASSERT(p_ht);
-
   hk_fill(&key, i_key_size, p_key_data);
 
   l_key = get_hash_value(p_ht, &key) & p_ht->i_size_mask;
 
   /* Check that the first element in the list really is the first. */
-  DEBUG_ASSERT( p_ht->pp_entries[l_key]?p_ht->pp_entries[l_key]->p_prev == NULL:1 );
 
   /* LOCK: p_ht->pp_entries[l_key] */
   p_e = search_in_bucket(p_ht, l_key, &key, (unsigned char)p_ht->i_heuristics);
@@ -560,13 +538,10 @@ void *ght_remove(ght_hash_table_t *p_ht,
   ght_uint32_t l_key;
   void *p_ret=NULL;
 
-  DEBUG_ASSERT(p_ht);
-
   hk_fill(&key, i_key_size, p_key_data);
   l_key = get_hash_value(p_ht, &key) & p_ht->i_size_mask;
 
   /* Check that the first element really is the first */
-  DEBUG_ASSERT( (p_ht->pp_entries[l_key]?p_ht->pp_entries[l_key]->p_prev == NULL:1) );
 
   /* LOCK: p_ht->pp_entries[l_key] */
   p_out = search_in_bucket(p_ht, l_key, &key, 0);
@@ -596,8 +571,6 @@ void *ght_remove(ght_hash_table_t *p_ht,
 
 static void *first_keysize(ght_hash_table_t *p_ht, ght_iterator_t *p_iterator, const void **pp_key, unsigned int *size)
 {
-  DEBUG_ASSERT(p_ht && p_iterator);
-
   /* Fill the iterator */
   p_iterator->p_entry = p_ht->p_oldest;
 
@@ -635,8 +608,7 @@ void *ght_first_keysize(ght_hash_table_t *p_ht, ght_iterator_t *p_iterator, cons
 
 static void *next_keysize(ght_hash_table_t *p_ht, ght_iterator_t *p_iterator, const void **pp_key, unsigned int *size)
 {
-	UNREFERENCED_PARAMETER(p_ht);
-	DEBUG_ASSERT(p_ht && p_iterator);
+	p_ht = p_ht;
 
   if (p_iterator->p_next)
     {
@@ -682,8 +654,6 @@ void ght_finalize(ght_hash_table_t *p_ht)
 {
   unsigned int i;
 
-  DEBUG_ASSERT(p_ht);
-
   if (p_ht->pp_entries)
     {
       /* For each bucket, free all entries */
@@ -692,16 +662,16 @@ void ght_finalize(ght_hash_table_t *p_ht)
 	  free_entry_chain(p_ht, p_ht->pp_entries[i]);
 	  p_ht->pp_entries[i] = NULL;
 	}
-      DefaultFreeFunction (p_ht->pp_entries);
+      p_ht->fn_free(p_ht->pp_entries);
       p_ht->pp_entries = NULL;
     }
   if (p_ht->p_nr)
     {
-      DefaultFreeFunction (p_ht->p_nr);
+      p_ht->fn_free(p_ht->p_nr);
       p_ht->p_nr = NULL;
     }
 
-  DefaultFreeFunction (p_ht);
+  p_ht->fn_free(p_ht);
 }
 
 /* Rehash the hash table (i.e. change its size and reinsert all
@@ -715,11 +685,8 @@ void ght_rehash(ght_hash_table_t *p_ht, unsigned int i_size)
   void *p;
   unsigned int i;
 
-  DEBUG_ASSERT(p_ht);
-
   /* Recreate the hash table with the new size */
-  p_tmp = ght_create(i_size);
-  DEBUG_ASSERT(p_tmp);
+  p_tmp = ght_create(i_size, p_ht->fn_alloc, p_ht->fn_free);
 
   /* Set the flags for the new hash table */
   ght_set_hash(p_tmp, p_ht->fn_hash);
@@ -730,14 +697,11 @@ void ght_rehash(ght_hash_table_t *p_ht, unsigned int i_size)
   /* Walk through all elements in the table and insert them into the temporary one. */
   for (p = ght_first(p_ht, &iterator, &p_key); p; p = ght_next(p_ht, &iterator, &p_key))
     {
-      DEBUG_ASSERT(iterator.p_entry);
-
       /* Insert the entry into the new table */
       if (ght_insert(p_tmp,
 		     iterator.p_entry->p_data,
 		     iterator.p_entry->key.i_size, iterator.p_entry->key.p_key) < 0)
 	{
-	  LOG_ERROR("Out of memory error or entry already in hash table when rehashing (internal error)\n");
 	}
     }
 
@@ -752,8 +716,8 @@ void ght_rehash(ght_hash_table_t *p_ht, unsigned int i_size)
 	}
     }
 
-  DefaultFreeFunction (p_ht->pp_entries);
-  DefaultFreeFunction (p_ht->p_nr);
+  p_ht->fn_free(p_ht->pp_entries);
+  p_ht->fn_free(p_ht->p_nr);
 
   /* ... and replace it with the new */
   p_ht->i_size = p_tmp->i_size;
@@ -768,5 +732,5 @@ void ght_rehash(ght_hash_table_t *p_ht, unsigned int i_size)
   /* Clean up */
   p_tmp->pp_entries = NULL;
   p_tmp->p_nr = NULL;
-  DefaultFreeFunction (p_tmp);
+  p_ht->fn_free(p_tmp);
 }
