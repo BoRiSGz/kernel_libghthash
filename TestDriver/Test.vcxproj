@@ -50,10 +50,16 @@
   <PropertyGroup Label="Configuration" Condition="('$(Configuration)'=='Win10 Release') Or ('$(Configuration)'=='Win7 Release')">
     <UseDebugLibraries>False</UseDebugLibraries>
   </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="('$(Configuration)'=='Win10 Debug') Or ('$(Configuration)'=='Win10 Release')">
+    <TargetVersion>Windows10</TargetVersion>
+    <_NT_TARGET_VERSION>0xA000006</_NT_TARGET_VERSION>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="('$(Configuration)'=='Win7 Debug') Or ('$(Configuration)'=='Win7 Release')">
+    <TargetVersion>Windows7</TargetVersion>
+    <_NT_TARGET_VERSION>0x0601</_NT_TARGET_VERSION>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\kernel_libghthash\win7.props" Condition="('$(Configuration)'=='Win7 Release') Or ('$(Configuration)'=='Win7 Debug')" />
     <Import Project="Test.props" />
   </ImportGroup>
   <ItemGroup>
